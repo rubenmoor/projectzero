@@ -1,3 +1,5 @@
+WIP
+
 # Kepler Orbits
 
 How to implement a simplified solution of Newtonian celestial mechanics, i.e. the Kepler orbits in Unreal Engine/C++
@@ -10,7 +12,6 @@ Einstein later swapped out Newton's gravitation with his theory of general relat
 Even more technical, Einstein's general relativity can't be quite right, either:
 It is irreconilable with Quantum Mechanics and it doesn't account for what is called [Dark Matter](https://en.wikipedia.org/wiki/Dark_matter).
 We don't care: as we will see, Newtonian physics are good enough for our purpose.
-... and we are still free to add relativistic effects on top, whenever we want.
 
 If, and only if, we allow us to reduce the planetary motion to a two-body problem, Newton's insights provide us with a general, analytical solution.
 This means, there exist formulas that, together, are a complete recipe to model planetary motion in a game engine.
@@ -94,7 +95,72 @@ A notable exception is the [perihelion precession of Mercury](https://en.wikiped
 In an elliptic orbit, there is the point closest to the central body.
 This is the perihelion.
 Perihelion precession means that every time Mercury finishes an orbit, its perihelion has moved a bit.
-Expert readers will note right away that this isn't a Kepler orbit anymore and thus not part of our way of simulating planets. 
+Expert readers will note right away that this isn't a Kepler orbit anymore and thus won't show up in this simulation. 
+
+### An alternative approach, both simpler and arguably more powerful: Numerical Newtonian orbits
+
+There is a noteworthy alternative to the above.
+If you want to account for an arbitrary number of bodies that all affect each other gravitationally,
+or if you want to add relativistic effects like the gravitation close to a black hole,
+you can follow the following, more flexible recipe:
+
+Every time step, for every celestial body, cycle through all other celestial bodies to calculate the resulting force based on Newton's law of gravitation:
+
+`F = G m_1 m_2 / r^2`
+
+or simply the resulting acceleration `a = F / m = G m_2 / r^2`.
+You then multiply by the elapsed time to get the change in velocity,
+you add that to the old velocity to get the new velocity,
+you multiply by the elapsed time once more to get the change in position,
+and finally you move the body to its new location.
+There is no spline to move along.
+For a conventional situation with one solar mass and a few spread-out planets, the resulting motion will be the same as with the Kepler orbits.
+
+So why do we bother with Kepler's ellipses?
+
+With Newton's general formula, we can deal with more general situations.
+That is, situations that do not result in Kepler orbits.
+By restricting the simulation to Kepler orbits, we gain the advantage that we calculate the whole trajectory of any body, at once.
+With Newton's formula we only get the position of the next time step.
+If you want to visualize the expected trajectory this way, you would have to calculate forward into the future.
+I haven't tried out, how far you can go like this on a modern Computer, but it seems silly enough to me to stay with Kepler.
+
+## Actually doing the math
+
+In principle, there is a formula where you plugin the standard gravitational parameter and the initial values for location and velocity of your celestial body and you get the orbit as a result.
+In practice, this is complicated by a case distinction.
+
+[Following Wikipedia](https://en.wikipedia.org/wiki/Eccentricity_vector), you calculate the **ecentricity vector** 
+
+![image](https://user-images.githubusercontent.com/6209273/193174171-347f7189-a69f-4067-a3a9-54ff8e67b18b.png)
+
+and then conclude:
+
+* **|e| = 0** => circular orbit
+* **0 < |e| < 1** => elliptic orbit
+* **|e| = 1** => parabolic orbit
+* **|e| > 1** => hyperpolic orbit
+
+First, however, there is the case when your body moves on a straight line towards the central mass (or away from it), or it doesn't move at all.
+Those are the aforementioned linear cases that imply **|e| = 1**, too.
+
+Second, mathematically it makes sense to make an exact case distinction.
+Numerically, the circular orbit and the parabolic orbit won't ever happen.
+For the circular orbit, it's not a big deal.
+You can check for **|e| = 0** within a certain tolerance, if you want to see circular orbits.
+But note how this isn't even necessary: The ellipses with **|e|** close to zero approach a circle just fine.
+
+With **|e|** approaching 1 this is a different story.
+There is a discontinuity in your orbit: At some point, at the magical threshold, the closed loop opens and the ellipse turns into a parabola.
+The first actual problem with this: Long before that threshold, your ellipse gets extremely large, probably large than you want to accomodate.
+There are instabilities in the unreal engine for splines that large (I didn't witness a float overflow).
+Rounding up to 1 a bit earlier is actually the solution.
+The resulting parabolic trajectory is infinintely large, of course, but you just cut it off and don't need to deal with absurdly large ellipses as a special case.
+
+This brings actual problem Nr. 2, though:
+Suddenly what should be a narrow elliptic orbits is wrongly displayed as a parabola, too.
+Why is that?
+Look up three paragraphs: The straight line case, too, is implied by **|e| = 1** and by rounding up **|e|** prematurely, we produce parabolas where we should find a narrow ellipse.
+The solution is to calculate the energy of the body as the sum of kinetic and potential energy, like that:
 
 
-## An alternative approach, both simpler and arguably more powerful: Numerical Newtonian orbits
