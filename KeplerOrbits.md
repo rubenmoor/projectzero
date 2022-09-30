@@ -132,7 +132,7 @@ In practice, this is complicated by a case distinction.
 
 [Following Wikipedia](https://en.wikipedia.org/wiki/Eccentricity_vector), you calculate the **ecentricity vector** 
 
-![image](https://user-images.githubusercontent.com/6209273/193174171-347f7189-a69f-4067-a3a9-54ff8e67b18b.png)
+![image](https://user-images.githubusercontent.com/6209273/193177404-c6df2847-60c6-4719-ac7c-09e3b696437d.png)
 
 and then conclude:
 
