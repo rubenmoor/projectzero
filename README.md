@@ -15,3 +15,4 @@
 * [Accessing a property value](AccessPropertyValue.md)
 * [Tracking a world location via indicator in the HUD](TrackingIndicator.md)
 * [Draw a circle in NativePaint](MakeCircle.md)
+* [Bind a lambda expression to the Input Component](InputBindLambda.md)
