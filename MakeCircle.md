@@ -38,7 +38,7 @@ int32 UUW_HUD::NativePaint(const FPaintArgs& Args, const FGeometry& AllottedGeom
 	
 	// draw stuff
 	
-  // don't forget this, otherwise some layer won't be drawn
+    // don't forget this, otherwise some layer won't be drawn
 	const int32 LayerIdNew = LayerId + 1;
   
 	return Super::NativePaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerIdNew, InWidgetStyle,
@@ -68,8 +68,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="UMG Widgets")
 	TObjectPtr<UUW_MYWidget> MyWidget;
   
-  // see below for the implementation
-  virtual void BeginPlay() override;
+    // see below for the implementation
+    virtual void BeginPlay() override;
 };
 ```
 
