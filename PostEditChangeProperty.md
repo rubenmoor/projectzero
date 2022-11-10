@@ -6,13 +6,16 @@ In that case you could write something like the following:
 ```
 // MyActor.h
   // inside the the class declaration
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+  #if WITH_EDITOR
+  virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+  #endif
 
 // MyActor.cpp
+#if WITH_EDITOR
 void MyActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-	const FName Name = PropertyChangedEvent.GetPropertyName();
+  Super::PostEditChangeProperty(PropertyChangedEvent);
+  const FName Name = PropertyChangedEvent.GetPropertyName();
   
   // assuming the existence of the properties "Velocity" and "VecVelocity"
   static const FName FNameVelocity = GET_MEMBER_NAME_CHECKED(MyActor, Velocity)
@@ -23,20 +26,27 @@ void MyActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
     VecVelocity = VecVelocity.GetUnsafeNormal() * Velocity;
   }
 }
+#endif
 ```
 
+The pragmas `#if WITH_EDITOR` and the closing `#endif` are quite important.
+If you don't put them everywhere, your project won't package.
+
 *However*, one might think you can complete the above code for the case when you edit `VecVelocity`.
-The problem is that `	const FName Name = PropertyChangedEvent.GetPropertyName();` takes the values "X", "Y", and "Z",
+The problem is that `const FName Name = PropertyChangedEvent.GetPropertyName();` takes the values "X", "Y", and "Z",
 depending on what component of `VecVelocity` was changed.
 The name of the property `VecVelocity` is lost and this is true for changing values inside any `UStruct`, too.
 The solution is the use of `PostEditChangeChainProperty`, like so:
 
 ```
 // MyActor.h
-  // inside the the class declaration
-	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent) override;
+// inside the the class declaration
+#if WITH_EDITOR
+virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent) override;
+#endif
 
 // MyActor.cpp
+#if WITH_EDITOR
 void MyActor::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -56,6 +66,7 @@ void MyActor::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyCh
     Velocity = VecVelocity.Length();
   }
 }
+#endif
 ```
 
 The `GetHead()` in `const FName Name = PropertyChangedEvent.PropertyChain.GetHead()->GetValue()->GetFName();` digs up the name "VecVelocity".
@@ -63,7 +74,7 @@ If you want to go a level deeper, you would use `GetHead().GetNextNode()`.
 For the normal struct that isn't nested deeply, you can use `GetTail()`, which reveals "X", "Y", and "Z" in our case.
 
 Now you might think that you use `PostEditChangeChainProperty` for nested properties and `PostEditChangeProperty` for everything else?
-Well, as both methods gets called always, there isn't really a need to use the less powerful `PostEditChangeProperty` *ever*.
+Well, as both methods get called always, there isn't really a need to use the less powerful `PostEditChangeProperty` *ever*.
 
 ## Bonus: how does this work together with `OnConstruction`?
 
@@ -93,13 +104,16 @@ Not quite.
 I solved my problem by introducing a new property (not a `UProperty`, just a class member): `bSkipConstruction` and using it like this:
 
 ```
+#if WITH_EDITOR
 void PreEditChange(FProperty)
 {
   bSkipConstruction = true;
 }
+#endif
 
 void OnConstruction(FTransform&)
 {
+  // `bSkipConstruction` should default to `false`
   if(bSkipConstruction)
   {
     return;
@@ -108,12 +122,14 @@ void OnConstruction(FTransform&)
   // ...
 }
 
+#if WITH_EDITOR
 void PostEditChangeChainProperty(FPropertyChangedChainEvent&)
 {
   // fil in function body
   //
   bSkipConstruction = false;
 }
+#endif
 ```
 
 Quite the annoying workaround.
