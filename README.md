@@ -14,3 +14,4 @@
 * [Reacting to property changes in the editor](PostEditChangeProperty.md)
 * [Accessing a property value](AccessPropertyValue.md)
 * [Tracking a world location via indicator in the HUD](TrackingIndicator.md)
+* [Draw a circle in NativePaint](DrawCircle.md)
