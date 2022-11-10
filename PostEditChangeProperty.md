@@ -3,7 +3,7 @@ Typically this is overridden for Actors or Actor Components.
 E.g. you have a couple of properties that are logically linked and only changing one of them, would result in an inconsistency.
 In that case you could write something like the following:
 
-```
+```cpp
 // MyActor.h
   // inside the the class declaration
   #if WITH_EDITOR
@@ -38,7 +38,7 @@ depending on what component of `VecVelocity` was changed.
 The name of the property `VecVelocity` is lost and this is true for changing values inside any `UStruct`, too.
 The solution is the use of `PostEditChangeChainProperty`, like so:
 
-```
+```cpp
 // MyActor.h
 // inside the the class declaration
 #if WITH_EDITOR
@@ -103,7 +103,7 @@ So you have to decide to either use `OnConstruction` *or* `PostEditChangeChainPr
 Not quite.
 I solved my problem by introducing a new property (not a `UProperty`, just a class member): `bSkipConstruction` and using it like this:
 
-```
+```cpp
 #if WITH_EDITOR
 void PreEditChange(FProperty)
 {
