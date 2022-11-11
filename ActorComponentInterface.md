@@ -126,3 +126,6 @@ The implementation in `MyActor` changes, too:
 ```cpp
 virtual UMyComponent* GetMyComponent_Implementation() override { return MyComponent; }
 ```
+
+And any mention of `GetMyComponent` inside the interface, e.g. inside `IHasMyComponent::Construction`,
+must be replaced by `GetMyComponent_Implementation`, too.
