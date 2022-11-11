@@ -127,5 +127,20 @@ The implementation in `MyActor` changes, too:
 virtual UMyComponent* GetMyComponent_Implementation() override { return MyComponent; }
 ```
 
-And any mention of `GetMyComponent` inside the interface, e.g. inside `IHasMyComponent::Construction`,
-must be replaced by `GetMyComponent_Implementation`, too.
+There is bigger downside, however.
+Becoming Blueprint-compatible this way, we expose the interface to the Unreal API with the effect that the default implementation for
+`IHasMyComponent::Construction` no longer works.
+We are supposed to call interface methods like this:
+
+```cpp
+// casting doesn't always work, use `Implements<>` instead
+if(MyActor->Implements<IHasMyComponent>())
+{
+  // automatically generated `Execute_` function
+  IHasMyComponent::Execute_GetOrbit(MyActor);
+}
+```
+
+Cf. the [article on C++ interfaces in the unreal community wiki](https://unrealcommunity.wiki/interfaces-in-cpp-tjd0j1kk).
+
+There is no room for default implementations in the interface that call interface methods themselves.
