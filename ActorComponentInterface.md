@@ -32,7 +32,7 @@ A both, more elegant and more efficient solution is the implementation of a C++ 
 
 // file: MyComponent.h
 
-UINTERFACE()
+UINTERFACE(meta=(CannotImplementInterfaceInBlueprint))
 class UHasMyComponent : public UInterface
 {
     GENERATED_BODY()
@@ -112,9 +112,10 @@ But you can call the `Construction` method from the interface in `MyActor::OnCon
 
 Note that the above code has a disadvantage:
 `GetMyComponent` is not a `UFUNCTION` and can't be called from Blueprint.
+The line `UINTERFACE(meta=(CannotImplementInterfaceInBlueprint))` makes that explicit.
 
 Following the documentation of C++ interfaces in Unreal, this can be fixed.
-Just change the declation in the interface to  the following:
+Remove the meta and change the declation in the interface to  the following:
 
 ```cpp
 UFUNCTION(BlueprintNativeEvent)
