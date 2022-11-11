@@ -111,4 +111,18 @@ But you can call the `Construction` method from the interface in `MyActor::OnCon
 
 Note that the above code has a disadvantage:
 `GetMyComponent` is not a `UFUNCTION` and can't be called from Blueprint.
-If this is important for you, follow the documentation on interfaces and implement the method as `BlueprintNativeEvent`.
+
+Following the documentation of C++ interfaces in Unreal, this can be fixed.
+Just change the declation in the interface to  the following:
+
+```cpp
+UFUNCTION(BlueprintNativeEvent)
+UMyComponent* GetComponent();
+```
+
+We don't use `virtual` and we can't make the function purely virtual, either.
+The implementation in `MyActor` changes, too:
+
+```cpp
+virtual UMyComponent* GetMyComponent_Implementation() override { return MyComponent; }
+```
