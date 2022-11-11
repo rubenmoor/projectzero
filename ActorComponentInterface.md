@@ -115,7 +115,12 @@ Note that the above code has a disadvantage:
 The line `UINTERFACE(meta=(CannotImplementInterfaceInBlueprint))` makes that explicit.
 
 Following the documentation of C++ interfaces in Unreal, this can be fixed.
-Remove the meta and change the declation in the interface to  the following:
+We pay a price, though.
+Staying within the world of C++ has the advantage of the code remaining concise.
+And the conciseness was one of the selling points for the use of interfaces.
+If you need Blueprint support, however, this is how you do it:
+
+First, remove the `meta=(CannotImplementInterfaceInBlueprint)` and change the declation in the interface to  the following:
 
 ```cpp
 UFUNCTION(BlueprintNativeEvent)
@@ -123,15 +128,16 @@ UMyComponent* GetComponent();
 ```
 
 We don't use `virtual` and we can't make the function purely virtual, either.
-The implementation in `MyActor` changes, too:
+
+Second, the implementation in `MyActor` changes:
 
 ```cpp
 virtual UMyComponent* GetMyComponent_Implementation() override { return MyComponent; }
 ```
 
-The `Construction` method needs some adaption, too.
-Becoming Blueprint-compatible this way, we expose the interface to the Unreal API with the effect that the default implementation for
-We are supposed to call interface methods like this:
+Any call to what was formerly `GetOrbit` changes.
+You see the change in the `Construction` method.
+We are supposed to call interface methods like this, everywhere:
 
 ```cpp
 // casting doesn't always work, use `Implements<>` instead
@@ -141,6 +147,9 @@ if(MyActor->Implements<IHasMyComponent>())
   IHasMyComponent::Execute_GetMyComponent(MyActor);
 }
 ```
+
+Only this way, it is ensured that an actor that implements the interface via Blueprint gets notified.
+The C++ way isn't aware of Blueprint-interfaces.
 
 Cf. the [article on C++ interfaces in the unreal community wiki](https://unrealcommunity.wiki/interfaces-in-cpp-tjd0j1kk).
 
