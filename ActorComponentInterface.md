@@ -76,7 +76,7 @@ public:
 Now, at runtime, you can run
 
 ```cpp
-Cast<IHasOrbit>(MyActor)->GetMyComponent();
+Cast<IHasMyComponent>(MyActor)->GetMyComponent();
 ```
 
 to get the component, efficient and clean.
@@ -86,7 +86,7 @@ Even better, you don't have to risk a null-pointer exception:
 if(MyActor->Implements<IHasMyComponent>())
 {
   // savely access the interface
-  Cast<IHasOrbit>(MyActor)->GetMyComponent();
+  Cast<IHasMyComponent>(MyActor)->GetMyComponent();
 }
 ```
 
@@ -99,6 +99,7 @@ I find it useful to add a method `Construction`:
 
 void IHasMyComponent::Construction(const Transform& Transform)
 {
+  UMyComponent* MyComponent = GetMyComponent();
   // run a construction script for the component
 }
 ```
@@ -127,9 +128,8 @@ The implementation in `MyActor` changes, too:
 virtual UMyComponent* GetMyComponent_Implementation() override { return MyComponent; }
 ```
 
-There is bigger downside, however.
+The `Construction` method needs some adaption, too.
 Becoming Blueprint-compatible this way, we expose the interface to the Unreal API with the effect that the default implementation for
-`IHasMyComponent::Construction` no longer works.
 We are supposed to call interface methods like this:
 
 ```cpp
@@ -137,10 +137,30 @@ We are supposed to call interface methods like this:
 if(MyActor->Implements<IHasMyComponent>())
 {
   // automatically generated `Execute_` function
-  IHasMyComponent::Execute_GetOrbit(MyActor);
+  IHasMyComponent::Execute_GetMyComponent(MyActor);
 }
 ```
 
 Cf. the [article on C++ interfaces in the unreal community wiki](https://unrealcommunity.wiki/interfaces-in-cpp-tjd0j1kk).
 
-There is no room for default implementations in the interface that call interface methods themselves.
+Now that we need to pass `MyActor` to `GetMyComponent`, we need access to `MyActor` inside `Construction`.
+This is how I worked around this:
+
+```cpp
+
+// file: MyComponent.h
+
+void IHasMyComponent::Construction(UObject* Object, const Transform& Transform)
+{
+  UMyComponent* MyComponent = Execute_GetMyComponent(Object);
+  // run a construction script for the component
+}
+```
+
+Properly adapting to the Unreal API makes us Blueprint-compatible, again, at the expense of code that is a bit noisy.
+You might consider renaming `GetMyComponent` to `Get`.
+`IHasMyComponent::Get(MyActor)` is a bit more elegant.
+However, if you have some other component with interface according to this recipe,
+you get a naming clash when trying to implement `Get_Implementation()` in your Actor.
+The two methods differ in their return type (and their origin), but that is not enough to distinguish them,
+even though they can never be called ambiguously.
