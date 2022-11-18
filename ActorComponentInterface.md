@@ -83,7 +83,7 @@ to get the component, efficient and clean.
 Even better, you don't have to risk a null-pointer exception:
 
 ```cpp
-if(MyActor->Implements<IHasMyComponent>())
+if(MyActor->Implements<UHasMyComponent>()) // Note `U` instead of `I` when using `Implements` like this!
 {
   // savely access the interface
   Cast<IHasMyComponent>(MyActor)->GetMyComponent();
