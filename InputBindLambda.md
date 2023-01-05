@@ -1,5 +1,8 @@
 # Use a closure to bind actions to the Input Component
 
+EDIT: There is a simpler alternative to using closures, which makes [use of non-type template parameters](BindInputToTemplatedFunction.md).
+The closure solution is more flexible, but very likely not neceesary.
+
 This is from [a comment of Neverender in the official forums](https://forums.unrealengine.com/t/can-i-use-bindaction-with-lambda/353633).
 
 Closures in C++ are great.
