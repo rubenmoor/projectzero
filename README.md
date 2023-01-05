@@ -15,5 +15,6 @@
 * [Accessing a property value](AccessPropertyValue.md)
 * [Tracking a world location via indicator in the HUD](TrackingIndicator.md)
 * [Draw a circle in NativePaint](MakeCircle.md)
-* [Bind a lambda expression to the Input Component](InputBindLambda.md)
+* [Use non-type template parameters when binding actions to functions](BindInputToTemplatedFunction.md)
+  * or instead: [Bind a lambda expression to the Input Component](InputBindLambda.md)
 * [Add flexibility to your components with C++ interfaces](ActorComponentInterface.md)
