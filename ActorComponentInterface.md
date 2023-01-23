@@ -99,10 +99,12 @@ I find it useful to add a method `Construction`:
 
 // file: MyComponent.cpp
 
-void IHasMyComponent::Construction(const Transform& Transform)
+void IHasMyComponent::Construction(AActor* Actor)
 {
   UMyComponent* MyComponent = GetMyComponent();
-  // run a construction script for the component
+  // run code that is aware of the component and whatever you pass as parameter
+  // e.g. to do some component-specific setup;
+  // you can call this method in `OnConstruction` of the actor
 }
 ```
 
