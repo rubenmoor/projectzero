@@ -99,12 +99,11 @@ I find it useful to add a method `Construction`:
 
 // file: MyComponent.cpp
 
-void IHasMyComponent::Construction(AActor* Actor)
+void IHasMyComponent::Construction(const FTransform& Transform)
 {
   UMyComponent* MyComponent = GetMyComponent();
   // run code that is aware of the component and whatever you pass as parameter
   // e.g. to do some component-specific setup;
-  // you can call this method in `OnConstruction` of the actor
 }
 ```
 
@@ -157,24 +156,24 @@ The C++ way isn't aware of Blueprint-interfaces.
 
 Cf. the [article on C++ interfaces in the unreal community wiki](https://unrealcommunity.wiki/interfaces-in-cpp-tjd0j1kk).
 
-Now that we need to pass `MyActor` to `GetMyComponent`, we need access to `MyActor` inside `Construction`.
-This is how I worked around this:
+Finally, the last inconvenience with Blueprint-compatible interfaces:
+The signature of `Execute_GetMyComponent` differs from the C++-way: It requires to pass a `UObject` as parameter.
+This means our `Construction` method needs a change: 
 
 ```cpp
 
 // file: MyComponent.h
 
-void IHasMyComponent::Construction(UObject* Object, const Transform& Transform)
+void IHasMyComponent::Construction(UObject* Object)
 {
   UMyComponent* MyComponent = Execute_GetMyComponent(Object);
   // run a construction script for the component
 }
 ```
 
-Properly adapting to the Unreal API makes us Blueprint-compatible, again, at the expense of code that is a bit noisy.
+Properly adapting to the Unreal API makes us Blueprint-compatible at the expense of code that is a bit noisy.
 You might consider renaming `GetMyComponent` to `Get`.
 `IHasMyComponent::Get(MyActor)` is a bit more elegant.
-However, if you have some other component with interface according to this recipe,
+However, if you have some other component with an interface according to this recipe,
 you get a naming clash when trying to implement `Get_Implementation()` in your Actor.
-The two methods differ in their return type (and their origin), but that is not enough to distinguish them,
-even though they can never be called ambiguously.
+The two methods differ in their return type (and their origin), but that is not enough to distinguish them.
