@@ -52,6 +52,8 @@ public:
 In case you wonder why I defined two classes to define the interface, read the [documentation on interfaces in Unreal](https://docs.unrealengine.com/5.0/en-US/interfaces-in-unreal-engine/).
 
 Any actor that uses `MyComponent` has to inherit the interface and implement the *pure virtual function* `GetMyComponent`.
+Even better: inherit the interface first and then the compiler will remind you to implement `GetMyComponent`, 
+which in turn reminds you to actually put that component on the actor.
 
 ```cpp
 UCLASS()
