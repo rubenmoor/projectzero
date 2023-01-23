@@ -139,9 +139,9 @@ Second, the implementation in `MyActor` changes:
 virtual UMyComponent* GetMyComponent_Implementation() override { return MyComponent; }
 ```
 
-Any call to what was formerly `GetOrbit` changes.
+Any call to what was formerly `GetMyComponent` changes.
 You see the change in the `Construction` method.
-We are supposed to call interface methods like this, everywhere:
+We are supposed to call Blueprint-compatible interface methods like this, everywhere:
 
 ```cpp
 // casting doesn't always work, use `Implements<>` instead
