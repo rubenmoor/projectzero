@@ -145,7 +145,7 @@ We are supposed to call Blueprint-compatible interface methods like this, everyw
 
 ```cpp
 // casting doesn't always work, use `Implements<>` instead
-if(MyActor->Implements<IHasMyComponent>())
+if(MyActor->Implements<UHasMyComponent>())
 {
   // automatically generated `Execute_` function
   IHasMyComponent::Execute_GetMyComponent(MyActor);
