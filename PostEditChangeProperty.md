@@ -52,18 +52,18 @@ virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyCha
 
 // MyActor.cpp
 #if WITH_EDITOR
-void MyActor::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
+void MyActor::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedChainEvent)
 {
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-	const FName Name = PropertyChangedEvent.PropertyChain.GetHead()->GetValue()->GetFName();
+  Super::PostEditChangeChainProperty(PropertyChangedChainEvent);
+  const FName Name = PropertyChangedChainEvent.PropertyChain.GetHead()->GetValue()->GetFName();
   
   // assuming the existence of the properties "Velocity" and "VecVelocity"
   static const FName FNameVelocity    = GET_MEMBER_NAME_CHECKED(MyActor, Velocity   );
-	static const FName FNameVecVelocity = GET_MEMBER_NAME_CHECKED(MyActor, VecVelocity);
+  static const FName FNameVecVelocity = GET_MEMBER_NAME_CHECKED(MyActor, VecVelocity);
 
   if(Name == FNameVelocity)
   {
-    // we are in *Post*EditChangeProperty, i.e. `Velocity` already has its new value
+    // we are in *Post*EditChangeChainProperty, i.e. `Velocity` already has its new value
     VecVelocity = VecVelocity.GetUnsafeNormal() * Velocity;
   }
   else if(Name == FNameVecVelocity)
