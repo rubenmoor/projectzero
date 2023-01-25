@@ -1,3 +1,5 @@
+# The simple case: no nesting
+
 Unreal offers to override `PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)` for any `UObject`.
 Typically this is overridden for Actors or Actor Components.
 E.g. you have a couple of properties that are logically linked and only changing one of them, would result in an inconsistency.
@@ -32,7 +34,10 @@ void MyActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 The pragmas `#if WITH_EDITOR` and the closing `#endif` are quite important.
 If you don't put them everywhere, your project won't package.
 
-*However*, one might think you can complete the above code for the case when you edit `VecVelocity`.
+# The general case: nested values
+
+*However*, one might think you can complete the above code for the case when you edit `VecVelocity`,
+which has type `FVector` instead of `double`.
 The problem is that `const FName Name = PropertyChangedEvent.GetPropertyName();` takes the values "X", "Y", and "Z",
 depending on what component of `VecVelocity` was changed.
 The name of the property `VecVelocity` is lost and this is true for changing values inside any `UStruct`, too.
