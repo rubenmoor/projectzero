@@ -13,7 +13,7 @@ While the construction script (BluePrint) and `AActor::OnConstruction` aren't id
 This is not the case for the C++ constructor.
 
 According to official documentation, the C++ constructor of any C++ object (class or struct) is used to set defaults for class properties.
-This is very true and the constructor can't to much more.
+This is very true and the constructor can't do much more.
 
 #### The C++-Constructor doesn't have access to Unreal systems
 
@@ -23,16 +23,16 @@ Or when you hit simulate or play to start play-in-editor.
 But a `MyCharacter` object also will be created when you just start up the Unreal Editor.
 ... and when you edit a BluePrint class object `BP_MyCharacter` that inherits from `MyCharacter`.
 
-Just put a break point into the constructor and run debug and start counting how many times your break point is hit while you edit instance defaults in Blueprint.
+Just put a break point into the constructor and run debug and start counting how many times your break point is hit, while you edit instance defaults in Blueprint.
 
 The reason for this:
 Unreal Engine has to build instances of your classes so you can work with them in the editor
 (including, but not limited to, the
-[Class Default Object](https://docs.unrealengine.com/4.26/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/Objects/).
-)
+[Class Default Object](https://docs.unrealengine.com/4.26/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/Objects/)
+).
 And for this reason, from inside a C++-constructor you can't rely on the presence of any other objects.
-No `GameInstance` (loads only once you it play), no `PlayerController`, no `GameState`.
-There is no `GEngine` either.
+No `GameInstance` (loads only once you hit "play"), no `PlayerController`, no `GameState`.
+There is no guarantee that `GEngine` is there, either.
 
 #### What the C++-Constructor is good for
 
@@ -76,7 +76,7 @@ AOrbit::AOrbit()
 #### You can't pass arguments to your C++-constructor
 
 Well you can, technically, but it's no use.
-You are free to overload the constructor with one that take arguments but it won't get called.
+You are free to overload the constructor with one that takes arguments but it won't get called.
 
 In the code sample above you see calls to `CreateDefaultSubobject` to initialize components,
 which internally only ever calls the constructor without arguments.
@@ -88,7 +88,7 @@ If you use `UObject::SpawnActor` to instantiate an actor again the same.
 `AActor::OnConstruction` is quite different from the C++-constructor in that it is a Unreal Engine characteristic and not a built-in feature of C++.
 One consequence of this:
 Inside your `OnConstruction` you usually see a call to `Super::OnConstruction`, to call the `OnConstruction` method of the parent class.
-This call is optional and you can omit it (or even call to `SomeParentFurtherUp::OnConstruction) as you wish.
+This call is optional and you can omit it (or even call to `SomeParentFurtherUp::OnConstruction`) as you wish.
 However, it is entirely impossible to have an object contructed *without running the C++constructors of its parents*.
 
 Like with the constructor, it is worthwhile putting a breakpoint into your `OnConstruction` method to see how often it gets called and at what times.
@@ -224,6 +224,9 @@ When multiplayer gets involved, certain systems will be available on the server 
 And in those cases, you probably want to fix your code rather then to silence the error.
 
 In the above example, I check `WorldType` and the object flags, but after that I assume that my pointers are valid.
+If a null-pointer exception still happens, at least one of my assumptions was wrong and I have to make changes to my code.
+But also I hopefully learned something that is more general than "that specific pointer just happended to be null"
+and can take that into consideration elsewhere.
 
 
 
