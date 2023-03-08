@@ -1,5 +1,3 @@
-WIP
-
 This is about `AActor::OnConstruction`, `UObject::PostEditChangeChainPropery`, what you can do inside there and how.
 
 ## The basics
