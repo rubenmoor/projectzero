@@ -18,4 +18,4 @@
 * [Use non-type template parameters when binding actions to functions](BindInputToTemplatedFunction.md)
   * or instead: [Bind a lambda expression to the Input Component](InputBindLambda.md)
 * [Add flexibility to your components with C++ interfaces](ActorComponentInterface.md)
-* [Heavy construction done right: How to spawn actors from inside OnConstruction](HeavyConstruction.md)
+* [Heavy construction done right: How to spawn actors from inside OnConstruction and what to do about Components](HeavyConstruction.md)
