@@ -195,7 +195,7 @@ In my project there are legitimate cases of transient actors spawning orbits lat
 E.g. the player controlled pawn that auto-spawns in my game at `BeginPlay` deserves an orbit, too
 I have to create that one manually (I use `OnPossess`), because of the trick above.
 
-## Some anti-patterns to avoid
+## An anti-patterns to avoid
 
 Anti-patterns refer to a kind of solution that is popular but might cause pain and suffering later on.
 
@@ -228,7 +228,77 @@ If a null-pointer exception still happens, at least one of my assumptions was wr
 But also I hopefully learned something that is more general than "that specific pointer just happended to be null"
 and can take that into consideration elsewhere.
 
+----
 
+## How to initialize components
 
+The C++-constructor of `UActorComponents` (or just: "components") works just like the C++-constructor of Actors.
+There is, however, no `OnConstruction` method for components and nothing that comes close, either.
 
+`PostInitProperties` exists but
+[according to the documentation]([url](https://docs.unrealengine.com/5.0/en-US/API/Runtime/Engine/Components/UActorComponent/PostInitProperties/))
+doesn't add much over the constructor.
+The properties are initialized, but alread `GetOwner()` to get the owning actor returns a null pointer.
 
+One way to initialize components similar to `OnConstruction`:
+Define a initialization method and call it from `OnConstruction` of the owning actor.
+This adds the annoyance that any actor that uses this component needs to add this call to their respective `OnConstruction` method.
+
+### OnComponentCreated and PostLoad
+
+There are more options.
+
+`OnComponentCreated` gets executed when a component is initially created.
+E.g. an actor is spawned (or dragged into the editor) in the editor or in game.
+
+`PostLoad` gets executed after a component was loaded:
+This happens once at editor startup for all components of actors that are part of the level that is being loaded.
+And it happens again when you start the game.
+
+Using either one falls short:
+Only `OnComponentCreated` doesn't allow to (permanently) set properties that aren't persisted during saving.
+E.g. I can initialize `FRandomStream RandomStream` with the `FName` of the owning actor:
+
+```cpp
+RandomStream.Initialize(GetOwner().GetFName();
+```
+
+And that works just fine ... until I close the editor and open it again.
+`OnComponentCreated` won't be called again and the seed isn't saved anywhere.
+
+Now `PostLoad()` suffers from the opposite problem:
+
+Initializing my `RandomStream` in `PostLoad()` works only *after* closing the editor and opening it again.
+When I just drag an actor (with my component) into the viewport, `PostLoad` doesn't get called.
+
+Luckily you can use both in unison:
+
+```cpp
+// in class declaration of MyComponent:
+bool bComponentSetupDone = false;
+
+// in class implementation:
+void MyComponent::ComponentSetup()
+{
+    // your custom "OnConstruction" method for the component
+    // ...
+    // 
+    bComponentSetupDone = true;
+}
+
+void MyComponent::OnComponentCreated()
+{
+    ComponentSetup();
+}
+
+void MyComponent::PostLoad()
+{
+    if(!bComponentSetupDone)
+    {
+        // if you don't check for bComponentSetupDone, PostLoad might get executed twice:
+        // once at editor startup
+        // another time at starting the game
+        ComponentSetup();
+    }
+}
+```
