@@ -1,3 +1,13 @@
+## This is buggy ...
+
+Unfortunately, while using the `UComboBoxKey` like explained below, I encountered a very hard-to-reproduce bug.
+The game would just crash eventually (access violation) without meaningful information in the stack trace.
+The crash appeared whenever I spend time in the menus of the UI.
+The stacktrace was somewhere deep in the slate widget hierarchy, no code of mine involved.
+I switched to `UComboBoxString` which works similar, but without the events `OnGenerateContentWidget` and `OnGenerateItemWidget`.
+
+## ... so go ahead at your own risk.
+
 The combo box is a straightforward widget, or at least it should be.
 It comes in two versions, `UComboBoxString` and `UComboBoxKey`.
 If I get it right, `UComboBoxString` is simplified:
