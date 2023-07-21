@@ -1,15 +1,18 @@
-You can find 80% of the information here [jambax.co.uk](https://jambax.co.uk/using-gameplay-tags-in-cpp/), already.
+You can find 80% of the information at [jambax.co.uk](https://jambax.co.uk/using-gameplay-tags-in-cpp/), already.
 There is a part missing though: I want my Gameplay Tags available and functioning from within my C++ constructors,
 which is totally possible - following e.g. [this forum post by SVasilev](https://forums.unrealengine.com/t/loading-native-gameplay-tags/265060/2?u=rubm123) or this very article.
 
 # About Gameplay Tags
 
 Gameplay Tags have been described as "FNames on steroids", because they support hierarchy (and corresponding matching)
-together with performance optimizations for replication (the "fast replication" option needs to be switched on for that) and,
-being tags rather than names, you can attach arbitrary numbers of Gameplay Tags to anything.
+together with performance optimizations for replication (the "fast replication" option needs to be switched on for that).
+
+And most importantly maybe being tags rather than names, you can attach arbitrary numbers of Gameplay Tags to anything.
 One typical use of a Gameplay Tag:
 Some pawn has the tag "Movement.Jumping", which might replace a boolean property `bIsJumping`.
+
 (In practice, pawns don't have Gameplay Tags, but rather their `AbilitySystemComponent` has them)
+
 Gameplay Tags accomany the Gameplay Ability System, but they can be used and make sense on their own.
 The [official documentation](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/Tags/) provides sort of an overview, however ...
 
@@ -28,7 +31,7 @@ Unless you don't care about basic type-safety you cannot.
 
 ## Native Gameplay Tags
 
-Here come to the rescue the "native gameplay tags" and a couple of articles and forum posts on how to implement them.
+Here come to the rescue the "native gameplay tags" and a couple of ways to implement them.
 The idea is to create the Gameplay Tag from within C++ (native).
 
 ```cpp
@@ -56,7 +59,7 @@ In theory, it should be possible to assign a Native Gameplay Tag before registra
 In practice this just doesn't seem to be the case)
 
 There isn't a hook to register your Gameplay Tags that would be early enough to make sure you can use your Native Gameplay Tags safely, **everywhere**.
-That includes the editor.
+That includes the C++ class constructor.
 
 # A module for Native Gameplay Tags
 
@@ -155,13 +158,14 @@ In your .uproject file, list the module under `Modules`, like this:
 
 ```json
 "Modules": [
-		{ // any other module
+    {
+        "Name": "..."
     },
-		{
-			"Name": "MyGameplayTags",
-			"Type": "RuntimeAndProgram",
-			"LoadingPhase": "Default"
-		}
+    {
+        "Name": "MyGameplayTags",
+        "Type": "RuntimeAndProgram",
+        "LoadingPhase": "Default"
+    }
 ```
 
 For the loading phase, "Default" is sufficient.
@@ -180,5 +184,6 @@ Tag.MovementJumping // use it
 ```
 
 I.e. the use of Native Gameplay Tags happens exclusively by there reference objects in C++ and is thus completely type-safe.
+
 In case you make changes to the string registered along with the native tag and call it "IsJumping" from now on,
 the editor will have the now invalid "Jumping" tag **only** where you put that tag manually via the editor.
