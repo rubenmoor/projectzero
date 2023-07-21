@@ -20,3 +20,4 @@
 * [Add flexibility to your components with C++ interfaces](ActorComponentInterface.md)
 * [Heavy construction done right: How to spawn actors from inside OnConstruction and what to do about Components](HeavyConstruction.md)
 * [Example code for UMG widget ComboBoxKey](ComboBoxKey.md)
+* [The proper way to create and use Native Gameplay Tags](NativeGameplayTags.md)
