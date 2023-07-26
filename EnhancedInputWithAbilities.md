@@ -255,7 +255,8 @@ class MYAWESOMEGAME_API UMyInputActionSet : public UDataAsset
     GENERATED_BODY()  
   
 public:  
-    // we dethrown the Input Mapping Context and define the key for an InputActionSet just once, here
+    // just like with Input Actions, which used to be persisted assets and now are created ad-hoc in code,
+    // we will dethrone the Input Mapping Context and define the key for an InputActionSet just once, here
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)  
     TArray<FKey> Keys;  
 
