@@ -21,3 +21,4 @@
 * [Heavy construction done right: How to spawn actors from inside OnConstruction and what to do about Components](HeavyConstruction.md)
 * [Example code for UMG widget ComboBoxKey](ComboBoxKey.md)
 * [The proper way to create and use Native Gameplay Tags](NativeGameplayTags.md)
+* [Using Enhanced Input to bind to Gameplay Abilities and Cues, as well as custom code, fixing Input triggers along the way](EnhancedInputWithAbilities.md)
