@@ -69,9 +69,9 @@ void AMyPlayerController::HandleJump(const FInputActionInstance& InputActionInst
 
     for (auto GameplayAbilitySpec : AbilitiesToActivate)
     {
- 	    // fun fact: if you don't explicitly check if your ability is active already, your ability will just activate once more,
-	    // which is basically never the intended behavior.
-	    // gameplay effects can stack (if you want them to), abilities not so much
+	// fun fact: if you don't explicitly check if your ability is active already, your ability will just activate once more,
+	// which is basically never the intended behavior.
+	// gameplay effects can stack (if you want them to), abilities not so much
         if(!GameplayAbilitySpec->IsActive()
         {
             TryActivateAbility(GameplayAbilitySpec->Handle);
