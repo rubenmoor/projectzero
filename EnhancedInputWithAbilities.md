@@ -3,7 +3,7 @@
 With Unreal Engine 5's Enhanced Input some questions arise on how to organize your code.
 The [system is well documented](https://docs.unrealengine.com/5.2/en-US/enhanced-input-in-unreal-engine/)
 and not that complex, I would argue.
-Definitely study those official docs, if you already haven't done so!
+Definitely study those official docs, if you haven't already done so.
 
 Also, [this tutorial](https://dev.epicgames.com/community/learning/tutorials/aqrD/unreal-engine-enhanced-input-binding-with-gameplay-tags-c) is much more complete than mine in that it shows the relevant editor settings, too. You probably want to read and understand it first. I will mention just this tutorial again further down, first to adapt the use of Gameplay Tags in there, second to offer my critique and an improvement.
 
@@ -15,7 +15,7 @@ This is especially true when the new thing has to integrate somehow into all the
 
 This **other stuff** might be the Gameplay Ability System.
 This is another pretty well-documented system and, in my humble opinion, a great abstraction layer.
-The gooddocumentation isn't the [offical one (even though you might want to start there)](https://docs.unrealengine.com/5.0/en-US/gameplay-ability-system-for-unreal-engine/),
+The high-quality documentation isn't the [offical one (even though you might want to start there)](https://docs.unrealengine.com/5.0/en-US/gameplay-ability-system-for-unreal-engine/),
 but this one: [github.com/tranek/GASDocumentation](https://github.com/tranek/GASDocumentation).
 
 Hence this title of this hopefully helpful article.
@@ -24,7 +24,7 @@ Hence this title of this hopefully helpful article.
 
 I'll start with the most basic approach,
 adding a little bit of opinion later on,
-to then finally present my way of doing this stuff - which might not be the right way for everyone.
+to then finally present my way of doing this stuff - which might or might not be something to copy for your own project.
 
 ## The basic intended workflow with Enhanced Input
 
@@ -33,9 +33,9 @@ I follow best practices and don't do anything novel.
 
 It goes something like this:
 
-1 Create Input Action assets in the Editor. Those have names like "IA_Accelerate", "IA_Jump", or "IA_Fire".
-2 Create at least one `InputMappingContext` in the Editor. Their main feature is that you can have several ones, side-by-side or stacked with explicit priority.
-3 Then bind some `UFUNCTION` to each Input Action as desired:
+1. Create Input Action assets in the Editor. Those have names like "IA_Accelerate", "IA_Jump", or "IA_Fire".
+2. Create at least one `InputMappingContext` in the Editor. Their main feature is that you can have several ones, side-by-side or stacked with explicit priority.
+3. Then bind some `UFUNCTION` to each Input Action as desired:
 
 ```cpp
 AMyPlayerController::SetupInput()
