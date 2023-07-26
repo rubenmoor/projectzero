@@ -148,7 +148,7 @@ You add a property `UMyInputActions* MyInputActions` to the Player Controller to
 AMyPlayerController::SetupInput()
 {
     Cast<UEnhancedInputComponent>(InputComponent)->BindAction
-	    ( MyInputActions->Map["IA_Jump"]
+	( MyInputActions->Map["IA_Jump"]
         , ETriggerEvent::Triggered
         , this
         , &AMyPlayerController::HandleJump
@@ -200,11 +200,11 @@ AMyPlayerController::SetupInput()
 	for(auto [InputAction, Tag] : MyInputActions.Map)
 	{
 		Cast<UEnhancedInputComponent>(InputComponent)->BindAction
-            ( InputAction
-            , ETriggerEvent::Triggered
-            , this
-            , &AMyPlayerController::HandleInputAction
-            );
+            		( InputAction
+            		, ETriggerEvent::Triggered
+            		, this
+            		, &AMyPlayerController::HandleInputAction
+            		);
 	}
 }
 
@@ -262,7 +262,7 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)  
     TSet<EInputTrigger> InputTriggers;  
 
-   // when you can have one tag, you can have many
+    // when you can have one tag, you can have many
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)  
     FGameplayTagContainer InputActionTags;  
   
@@ -325,11 +325,14 @@ void UMyInputActionSet::BindAction(UInputMappingContext* IMC)
     auto* InputAction = NewObject<UInputAction>(this);  
     InputAction->Triggers.Add(GetTriggerEvent(InputTrigger));  
     if(InputTriggers.Contains(InputTrigger))  
-    {        PC->GetInputComponent()->BindAction(InputAction, ETriggerEvent::Triggered, this, &UMyInputActionSet::HandleInput<InputTrigger>);  
+    {
+        PC->GetInputComponent()->BindAction(InputAction, ETriggerEvent::Triggered, this, &UMyInputActionSet::HandleInput<InputTrigger>);  
     }  
     for(const auto& Key : Keys)  
-    {        IMC->MapKey(InputAction, Key);  
-    }}  
+    {
+        IMC->MapKey(InputAction, Key);  
+    }
+}  
   
 template <EInputTrigger InputTrigger>  
 void UMyInputActionSet::HandleInput(const FInputActionInstance& InputActionInstance)  
@@ -461,7 +464,7 @@ protected:
     UFUNCTION(CallInEditor)  
     void RefreshMyInputActions();  
 #endif  
-    };
+};
 ```
 
 ```cpp
@@ -480,9 +483,11 @@ void UMyInputActions::RefreshMyInputActions()
     TArray<FAssetData> AssetData;  
     AssetRegistryModule.GetAssetsByClass(UMyInputActionSet::StaticClass()->GetClassPathName(), AssetData);  
     for(auto AssetDatum : AssetData)  
-    {        auto* Asset = Cast<UMyInputActionSet>(AssetDatum.GetAsset());  
+    {
+        auto* Asset = Cast<UMyInputActionSet>(AssetDatum.GetAsset());  
         Map.Add(Asset->GetFName(), Asset);  
-    }}  
+    }
+}  
 #endif
 ```
 
