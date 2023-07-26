@@ -179,7 +179,7 @@ AMyPlayerController::SetupInput()
             , this
             , &AMyPlayerController::HandleInputAction
             );
-	}
+    }
 }
 ```
 
@@ -188,7 +188,7 @@ Now comes an awkward part though. From within `AMyPlayerController::HandleInputA
 ```cpp
 AMyPlayerController::HandleInputAction(const FInputActionInstance& InputActionInstance)
 {
-	TryActivateAbilityByTag(Map.FindKey(InputActionInstance.SourceAction));
+    TryActivateAbilityByTag(Map.FindKey(InputActionInstance.SourceAction));
 }
 ```
 
@@ -197,20 +197,20 @@ You might as well turn around the map to `TMap<UInputAction*, FGameplayTag>` to 
 ```cpp
 AMyPlayerController::SetupInput()
 {
-	for(auto [InputAction, Tag] : MyInputActions.Map)
-	{
-		Cast<UEnhancedInputComponent>(InputComponent)->BindAction
-            		( InputAction
-            		, ETriggerEvent::Triggered
-            		, this
-            		, &AMyPlayerController::HandleInputAction
-            		);
-	}
+    for(auto [InputAction, Tag] : MyInputActions.Map)
+    {
+        Cast<UEnhancedInputComponent>(InputComponent)->BindAction
+            ( InputAction
+            , ETriggerEvent::Triggered
+            , this
+            , &AMyPlayerController::HandleInputAction
+            );
+    }
 }
 
 AMyPlayerController::HandleInputAction(const FInputActionInstance& InputActionInstance)
 {
-	TryActivateAbilityByTag(MyInputActions.Map[InputActionInstance.SourceAction]);
+    TryActivateAbilityByTag(MyInputActions.Map[InputActionInstance.SourceAction]);
 }
 ```
 
@@ -233,6 +233,7 @@ An Input Action set combines a number of Input Actions. They will all be control
 Thus the name `InputActionSet`.
 
 I use template parameters to pass the trigger on to the handler. This allows to have one key control a Gameplay Ability (or Gameplay Cues or anything, really) by pressing, holding or tapping a key - or all of the above.
+See [](BindInputToTemplatedFunction) for a short example on how templated functions can help when binding functions.
 
 ```cpp
 // file: MyInputActionSet.h
@@ -254,11 +255,11 @@ class MYAWESOMEGAME_API UMyInputActionSet : public UDataAsset
     GENERATED_BODY()  
   
 public:  
-	// we dethrown the Input Mapping Context and define the key for an InputActionSet just once, here
+    // we dethrown the Input Mapping Context and define the key for an InputActionSet just once, here
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)  
     TArray<FKey> Keys;  
 
-	//  an InputActionSet is defined by the set of triggers, each one will spawn a single InputAction
+    //  an InputActionSet is defined by the set of triggers, each one will spawn a single InputAction
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)  
     TSet<EInputTrigger> InputTriggers;  
 
@@ -266,8 +267,8 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)  
     FGameplayTagContainer InputActionTags;  
   
-    // create and bind an input action for every trigger in `InputTriggers`  
-	// this function will be called by the Player Controller to start things off
+    // create and bind an input action for every trigger in `InputTriggers`
+    // this function will be called by the Player Controller to start things off
     UFUNCTION(BlueprintCallable)  
     void BindActions(AMyPlayerController* InPlayercontroller, UInputMappingContext* IMC);  
 
@@ -292,14 +293,14 @@ public:
     float TapReleaseTimeThreshold = 0.2f;  
   
 protected:  
-	// template parameter effectively pass Input Trigger information down the line
-	// the UFUNCTION that binds an Input Action only has access to FInputActionInstance, otherwise
+    // the template parameter effectively pass Input Trigger information down the line
+    // Without this, the UFUNCTION that is bound to an Input Action only has access to FInputActionInstance, which sadly doesn't carry this information
     template<EInputTrigger InputTrigger>  
     void BindAction(UInputMappingContext* IMC);  
 
     // EInputTrigger is a custom enum defined in `AMyPlayerController` (see below)
-	// here we translate from the enum to the `UInputTrigger` object
-	// at this opportunity, we set the configuration values, too
+    // here we translate from the enum to the `UInputTrigger` object
+    // at this opportunity, we set the configuration values, too
     UInputTrigger* GetTriggerEvent(EInputTrigger InInputTrigger);  
 
     // this function doesn't do much more than translating the template parameter
@@ -307,13 +308,13 @@ protected:
     // this is necessary, though:
     // try to implement a templated function in the player controller and you get 
     // frustrated by circular imports
-	// (the implementations of templated functions go into the header file)
+    // (the implementations of templated functions go into the header file)
     template<EInputTrigger InputTrigger>  
     void HandleInput(const FInputActionInstance& InputActionInstance);  
 
-	// this class is factored out of `AMyPlayerController`
-	// leaving it in there, leaves the player controller more bloated
-	// having it apart, we need to keep a reference to the player controller around
+    // this class is factored out of `AMyPlayerController`
+    // leaving it in there, leaves the player controller more bloated
+    // having it apart, we need to keep a reference to the player controller around
     UPROPERTY(BlueprintReadOnly)  
     TObjectPtr<AMyPlayerController> PC;  
 };  
@@ -321,7 +322,7 @@ protected:
 template <EInputTrigger InputTrigger>  
 void UMyInputActionSet::BindAction(UInputMappingContext* IMC)  
 {  
-	// Input Actions are created at run-time now; no need to manage them, ever
+    // Input Actions are created at run-time now; no need to manage them, ever
     auto* InputAction = NewObject<UInputAction>(this);  
     InputAction->Triggers.Add(GetTriggerEvent(InputTrigger));  
     if(InputTriggers.Contains(InputTrigger))  
@@ -337,8 +338,8 @@ void UMyInputActionSet::BindAction(UInputMappingContext* IMC)
 template <EInputTrigger InputTrigger>  
 void UMyInputActionSet::HandleInput(const FInputActionInstance& InputActionInstance)  
 {  
-	// see the fruits of templated functios: we have now effectively bound to 
-	// a regular function that knows whether a key was pressed, released, held, heldreleased, tapped, ...
+    // see the fruits of templated functios: we have now effectively bound to 
+    // a regular function that knows whether a key was pressed, released, held, heldreleased, tapped, ...
     PC->RunInputAction(InputActionTags, InputTrigger, InputActionInstance);  
 }
 
@@ -355,8 +356,8 @@ void UMyInputActionSet::BindActions(AMyPlayerController* InPlayercontroller, UIn
     PC = InPlayercontroller;  
     using enum EInputTrigger;  
 
-	// templates parameters are set at compile-time;
-	// even if C++ rolls out short loops, we have to spell things out here
+    // templates parameters are set at compile-time;
+    // even if C++ rolls out short loops, we have to spell things out here
     BindAction<Down>          (IMC);  
     BindAction<Pressed>       (IMC);  
     BindAction<Released>      (IMC);  
@@ -426,7 +427,7 @@ UInputTrigger* UMyInputActionSet::GetTriggerEvent(EInputTrigger InInputTrigger)
             InputTrigger->ActuationThreshold = ActuationThreshold;  
             return InputTrigger;  
         }
-	}
+    }
 }
 ```
 
@@ -460,7 +461,7 @@ public:
   
 #if WITH_EDITOR  
 protected:  
-	// auto-fill with all assets of appropiate type
+    // auto-fill with all assets of appropiate type
     UFUNCTION(CallInEditor)  
     void RefreshMyInputActions();  
 #endif  
@@ -543,10 +544,10 @@ public:
     UFUNCTION(BlueprintCallable)  
     void RunInputAction(const FGameplayTagContainer& InputActionTags, EInputTrigger InputTrigger, const FInputActionInstance& InputActionInstance);  
 protected:  
-	// the Data Asset to store a map of `UMyInputActionSet`s  
-	// formerly stored `UInputAction`s
-	UPROPERTY(EditDefaultsOnly)  
-	TObjectPtr<UMyInputActions> MyInputActions;
+    // the Data Asset to store a map of `UMyInputActionSet`s  
+    // formerly stored `UInputAction`s
+    UPROPERTY(EditDefaultsOnly)  
+    TObjectPtr<UMyInputActions> MyInputActions;
  
     // Thus we use `AcknowledgePossesion` to set up the camera and alike
     virtual void AcknowledgePossession(APawn* P) override;  
@@ -737,3 +738,18 @@ void AMyPlayerController::RunCustomInputAction(FGameplayTag CustomBindingTag, EI
     }  
 }
 ```
+
+## Consideration of alternatives
+
+Some people might find that their Input Action assets together with one or more Input Mapping Contexts are quite managable in the editor without need for a grouping structure like the one I implement here.
+
+There is also a whole machinery for so called modifiers. I.e. both a single input action and a mapping in the Input Mapping Context allow to manipulate the Input Action value before it reaches your Input Action binding. 
+This doesn't even require coding. You can add a chain of modifiers by just clicking around in the editor.
+Even if I do stuff mostly in C++, I appreciate the options to try out things in the editor quickly without need to recompile.
+If needed, overriding `UInputModifier` isn't that complicated either for your own custom modifier.
+The modifiers have been quite useless for my use case, though.
+
+In theory, these modifiers help to have the Input Action value carry more information.
+It is, however, not possible to put information on the input trigger (**hold**, **pressed**, **released**, **tap**, ...) into this value without creating one single Input Action asset for every trigger.
+The resulting structure didn't appeal to me.
+When I offer a configuration inside my game that allows the player to re-map keys, I prefer to have a structure that allows me to set the key in just one place rather than parsing the Input Mapping Context for occurrences of some key to be re-mapped.
