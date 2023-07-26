@@ -65,14 +65,13 @@ If you set up a `AbilitySystemComponent` on your pawn, you might want to activat
 void AMyPlayerController::HandleJump(const FInputActionInstance& InputActionInstance)
 {
     TArray<FGameplayAbilitySpec*> AbilitiesToActivate;
-	GetActivatableGameplayAbilitySpecsByAllMatchingTags
-	    (TagJump.GetSingletonContainer(), AbilitiesToActivate);
+    GetActivatableGameplayAbilitySpecsByAllMatchingTags(TagJump.GetSingletonContainer(), AbilitiesToActivate);
 
     for (auto GameplayAbilitySpec : AbilitiesToActivate)
-	{
-		// fun fact: if you don't explicitly check if your ability is active already, your ability will just activate once more
-		// regardlessly, which is basically never the intended behavior.
-		// gameplay effects can stack, abilities not so much
+    {
+ 	    // fun fact: if you don't explicitly check if your ability is active already, your ability will just activate once more,
+	    // which is basically never the intended behavior.
+	    // gameplay effects can stack (if you want them to), abilities not so much
         if(!GameplayAbilitySpec->IsActive()
         {
             TryActivateAbility(GameplayAbilitySpec->Handle);
@@ -108,7 +107,7 @@ public:
 };
 ```
 
-In the Editor, create an Editor asset that inherits  from `UMyInputActions`. Now you can either fill it in manually with, or you add this little goody to have your computer do the work for you:
+In the Editor, create an Editor asset that inherits  from `UMyInputActions`. Now you can either fill it in manually or you add this little goodie to have your computer do the work for you:
 
 ```cpp
 // file: MyInputActions.h
@@ -133,26 +132,33 @@ void UMyInputActions::RefreshMyInputActions()
     TArray<FAssetData> AssetData;  
     AssetRegistryModule.GetAssetsByClass(UInputAction::StaticClass()->GetClassPathName(), AssetData);  
     for(auto AssetDatum : AssetData)  
-    {        auto* Asset = Cast<UInputAction>(AssetDatum.GetAsset());  
+    {
+        auto* Asset = Cast<UInputAction>(AssetDatum.GetAsset());  
         Map.Add(Asset->GetFName(), Asset);  
-    }}  
+    }
+}  
 #endif
 ```
 
 The `CallInEditor` qualifier for UFUNCTION gives you a button in the editor to populate your data asset. By the way, the Data Asset doesn't really need a `TMap`,  a `TArray` would do the job just find, too. I prefer `TMap`s over `TArray`s though, because you can never accidentally add an item twice. And if you have the key, in this case: the FName, you can access any value efficiently with just `Map["IA_Jump"]`.
 
-You add a property `UMyInputActions* MyInputActions` to the Player Controller to store a reference to the freshly created Data Asset class and then you can conveniently get any of you Input Actions in C++, like this:
+You add a property `UMyInputActions* MyInputActions` to the Player Controller to store a reference to the freshly created Data Asset class and then you can conveniently get any of your Input Actions in C++, like this:
 
 ```cpp
 AMyPlayerController::SetupInput()
 {
-    Cast<UEnhancedInputComponent>(InputComponent)->BindAction(MyInputActions->Map["IA_Jump", ETriggerEvent::Triggered, this, &AMyPlayerController::HandleJump);
+    Cast<UEnhancedInputComponent>(InputComponent)->BindAction
+	    ( MyInputActions->Map["IA_Jump"]
+        , ETriggerEvent::Triggered
+        , this
+        , &AMyPlayerController::HandleJump
+        );
 }
 ```
 
 ## Adding Gameplay Tags for actual organization
 
-This FName-based map isn't really good style. There is potential for win-win. We need to access the references to the Input Action Assets somehow and we can activate Gameplay Abilities by Gameplay Tags. If your project has a lot of Input Actions that all trigger one or more Gameplay Ability by Gameplay Tag, this is a very efficient way.
+This FName-based map isn't really doing a lot. I don't want to rely on spelled out FNames, usually. There is potential for win-win. We need to access the references to the Input Action Assets somehow and we can activate Gameplay Abilities by Gameplay Tags. If your project has a lot of Input Actions that all trigger one or more Gameplay Abilities by Gameplay Tag, this is a very efficient way.
 
 Gameplay Tags are a good-enough documented feature of the Gameplay Ability System. If you want to know how I set up my Native Gameplay Tags for easy use in C++, read the [recipe on the topic](NativeGameplayTags.md).
 
@@ -165,9 +171,14 @@ Replace the `TMap<FName, UInputAction*>` with `TMap<FGameplayTag, UInputAction*>
 ```cpp
 AMyPlayerController::SetupInput()
 {
-	for(auto Tag : MyAbilityTags)
-	{
-	    Cast<UEnhancedInputComponent>(InputComponent)->BindAction(MyInputActions->Map[Tag, ETriggerEvent::Triggered, this, &AMyPlayerController::HandleInputAction);
+    for(auto Tag : MyAbilityTags)
+    {
+        Cast<UEnhancedInputComponent>(InputComponent)->BindAction
+            ( MyInputActions->Map[Tag]
+            , ETriggerEvent::Triggered
+            , this
+            , &AMyPlayerController::HandleInputAction
+            );
 	}
 }
 ```
@@ -188,7 +199,12 @@ AMyPlayerController::SetupInput()
 {
 	for(auto [InputAction, Tag] : MyInputActions.Map)
 	{
-		Cast<UEnhancedInputComponent>(InputComponent)->BindAction(InputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::HandleInputAction)
+		Cast<UEnhancedInputComponent>(InputComponent)->BindAction
+            ( InputAction
+            , ETriggerEvent::Triggered
+            , this
+            , &AMyPlayerController::HandleInputAction
+            );
 	}
 }
 
@@ -200,18 +216,21 @@ AMyPlayerController::HandleInputAction(const FInputActionInstance& InputActionIn
 
 ### The limitations
 
-I wasn't happy with this solution. In my game, I have a couple of Gameplay Abilities that I strictly bind to a certain key. And furthermore, I want to try out the **Hold**, **HoldRelase**, **Tap** pattern, where holding a key activates the ability and ends it on key release, whereas tapping a key toggle the ability. I.e. it end when you tap the key again.
+I wasn't happy with this solution. In my game, I have a couple of Gameplay Abilities that I strictly bind to a certain key. And furthermore, I want to try out the **Hold**, **HoldRelase**, **Tap** pattern, where holding a key activates the ability and ends it on key release, whereas tapping a key toggle the ability. I.e. it ends when you tap the key again.
 
-This presumably simple pattern, generically applied to a couple of Input Actions and Abilities results in a lot of code duplication. ... and asset duplication. For this pattern I will need two Input Actions for every ability. I still am no friend of those lightweight Input Action Assets littering my content browser. There is also the timing configuration: How long to hold a key down, to trigger **hold**? How short to still count as a tap? And there is the option `bIsOneShot` for hold-style triggers that is `false` by default but makes more sense set to `true`. Now those configuration values, I want to set globally (most likely) and I have to override `UInputAction` to set defaults. Or I use a INI configuration file. Still, if things seem off, I would have to check individual Input Action Assets to make sure that they don't deviate from the default. Messy, for my taste.
-
+This presumably simple pattern, generically applied to a couple of Input Actions and Abilities results in a lot of code duplication. ... and asset duplication. For this pattern I will need two Input Actions for every ability. I still am no friend of those lightweight Input Action Assets littering my content browser. There is also the timing configuration: How long to hold a key down, to trigger **hold**? How short to still count as a **tap**? And there is the option `bIsOneShot` for hold-style triggers that is `false` by default but makes more sense set to `true`. Now those configuration values, I want to set globally (most likely) and I have to override `UInputAction` to set defaults. Or I use a INI configuration file. Still, if things seem off, I would have to check individual Input Action Assets to make sure that they don't deviate from the default. Messy, for my taste.
 
 # A more complete solution for Input Actions with the Gameplay Ability system
 
-This is my opinionated choice how to bind Input Actions to Gameplay abilities, more or less generically, just by means of tags. The system also accommodates "custom bindings", i.e. some Input Action that doesn't just trigger gameplay abilities, but does something completely different.
+This is my opinionated choice how to bind Input Actions to Gameplay abilities, more or less generically, just by means of tags.
+**Generically** means that this code accomodates the general situation where one input (e.g. a key) is treated by means of any number of triggers (**hold**, **release**, **tap**, ...) to then start or end any number of Gameplay Abilities.
+Configuring this chain happens in the editor, inside the `InputActionSet` asset.
+Extra coding is only required to implement stuff that isn't a Gameplay Ability or a Gameplay Cue.
 
 ## An `InputActionSet`, to fit any combinations of triggers in one structure
 
-An Input Action set combines a number of Input Actions. They will all be controlled by one input, e.g. a key on the keyboard. Then, for each trigger (pressed, down, release, tap, ...),  a single InputAction is created and configured at runtime.
+An Input Action set combines a number of Input Actions. They will all be controlled by one input, e.g. a key on the keyboard. Then, for each trigger (pressed, down, release, tap, ...), a single InputAction is created and configured at runtime.
+Thus the name `InputActionSet`.
 
 I use template parameters to pass the trigger on to the handler. This allows to have one key control a Gameplay Ability (or Gameplay Cues or anything, really) by pressing, holding or tapping a key - or all of the above.
 
@@ -348,22 +367,26 @@ void UMyInputActionSet::BindActions(AMyPlayerController* InPlayercontroller, UIn
 UInputTrigger* UMyInputActionSet::GetTriggerEvent(EInputTrigger InInputTrigger)  
 {  
     switch (InInputTrigger)  
-    {    case EInputTrigger::Down:  
+    {
+    case EInputTrigger::Down:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerDown>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
             return InputTrigger;  
-        }    case EInputTrigger::Pressed:  
+        }
+    case EInputTrigger::Pressed:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerPressed>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
             return InputTrigger;  
-        }    case EInputTrigger::Released:  
+        }
+    case EInputTrigger::Released:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerReleased>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
             return InputTrigger;  
-        }    case EInputTrigger::Hold:  
+        }
+    case EInputTrigger::Hold:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerHold>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
@@ -371,26 +394,30 @@ UInputTrigger* UMyInputActionSet::GetTriggerEvent(EInputTrigger InInputTrigger)
             InputTrigger->HoldTimeThreshold = HoldTimeThreshold;  
             InputTrigger->bIsOneShot = bIsOneShot;  
             return InputTrigger;  
-        }    case EInputTrigger::HoldAndRelease:  
+        }
+    case EInputTrigger::HoldAndRelease:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerHoldAndRelease>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
             InputTrigger->bAffectedByTimeDilation = bAffectedByTimeDilation;  
             InputTrigger->HoldTimeThreshold = HoldTimeThreshold;  
             return InputTrigger;  
-        }    case EInputTrigger::Tap:  
+        }
+    case EInputTrigger::Tap:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerTap>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
             InputTrigger->TapReleaseTimeThreshold = TapReleaseTimeThreshold;  
             return InputTrigger;  
-        }    case EInputTrigger::Pulse:  
+        }
+    case EInputTrigger::Pulse:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerPulse>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
             InputTrigger->bAffectedByTimeDilation = bAffectedByTimeDilation;  
             return InputTrigger;  
-        }    case EInputTrigger::ChordAction:  
+        }
+    case EInputTrigger::ChordAction:  
         {  
             const auto InputTrigger = NewObject<UInputTriggerChordAction>(this);  
             InputTrigger->ActuationThreshold = ActuationThreshold;  
@@ -516,24 +543,26 @@ protected:
 	UPROPERTY(EditDefaultsOnly)  
 	TObjectPtr<UMyInputActions> MyInputActions;
  
-    // event handlers  
-    virtual void Tick(float DeltaSeconds) override;  
-    // server-only  
-    virtual void OnPossess(APawn* InPawn) override;  
-    // OnPossess only runs on the server (in a listen-server setup)  
-    //virtual void OnPossess(APawn* InPawn) override;    // Thus we use `AcknowledgePossesion` to set up the camera and alike    virtual void AcknowledgePossession(APawn* P) override;  
+    // Thus we use `AcknowledgePossesion` to set up the camera and alike
+    virtual void AcknowledgePossession(APawn* P) override;  
   
     virtual void BeginPlay() override;  
   
     // input events  
   
-    /*     * deal with input actions bindings apart from gameplay ability or cue     * (an input action can have any combination of bindings to custom, ability, cue     *     */  
-    //UFUNCTION() TODO    void RunCustomInputAction(FGameplayTag CustomBindingTag, EInputTrigger InputTrigger, const FInputActionInstance& InputActionInstance);  
+    /*
+     * deal with input actions bindings apart from gameplay ability or cue
+     * (an input action can have any combination of bindings to custom, ability, cue
+     */  
+    UFUNCTION()
+    void RunCustomInputAction(FGameplayTag CustomBindingTag, EInputTrigger InputTrigger, const FInputActionInstance& InputActionInstance);  
+
     UPROPERTY(VisibleAnywhere)  
     TObjectPtr<UEnhancedInputLocalPlayerSubsystem> Input;  
   
     // convenience access to the AbilitySystemComponent of the possessed pawn  
-    // only used by client to process input    UPROPERTY(BlueprintReadOnly)  
+    // only used by client to process inpu
+    UPROPERTY(BlueprintReadOnly)  
     UMyAbilitySystemComponent* AbilitySystemComponent;  
 };
 ```
@@ -571,8 +600,10 @@ void AMyPlayerController::SetupInputComponent()
   
     auto* IMC = NewObject<UInputMappingContext>(this, "InputMappingContext");  
     for(auto [Name, InputActionSet] : MyInputActions->Map)  
-    {        InputActionSet->BindActions(this, IMC);  
-    }    Input->AddMappingContext(IMC, 0);  
+    {
+        InputActionSet->BindActions(this, IMC);  
+    }
+    Input->AddMappingContext(IMC, 0);  
 }  
   
 UEnhancedInputComponent* AMyPlayerController::GetInputComponent()  
@@ -591,52 +622,74 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
     const auto CustomInputBindingTags = InputActionTags.Filter(Tag.InputBindingCustom.GetSingleTagContainer());  
   
     for(auto CustomInputBindingTag : CustomInputBindingTags)  
-    {        RunCustomInputAction(CustomInputBindingTag, InputTrigger, InputActionInstance);  
-    }    if(!AbilityTags.IsEmpty())  
-    {        TArray<FGameplayAbilitySpec*> Specs;  
+    {
+        RunCustomInputAction(CustomInputBindingTag, InputTrigger, InputActionInstance);  
+    }
+    if(!AbilityTags.IsEmpty())  
+    {
+        TArray<FGameplayAbilitySpec*> Specs;  
         switch(InputTrigger)  
-        {        case EInputTrigger::Down:  
+        {
+        case EInputTrigger::Down:  
         case EInputTrigger::Pressed:  
         case EInputTrigger::Hold:  
             AbilitySystemComponent->GetActivatableGameplayAbilitySpecsByAllMatchingTags(AbilityTags, Specs, false);  
             for(auto Spec : Specs)  
-            {                check(!Spec->IsActive())  
+            {
+                check(!Spec->IsActive())  
                 AbilitySystemComponent->TryActivateAbility(Spec->Handle);  
             }  
             for(const auto Cue : Cues)  
-            {                FGameplayCueParameters Parameters;  
+            {
+                FGameplayCueParameters Parameters;  
                 AbilitySystemComponent->AddGameplayCueLocal(Cue, Parameters);  
-            }            break;  
+            }
+            break;  
         case EInputTrigger::Released:  
         case EInputTrigger::HoldAndRelease:  
             for(auto Spec : AbilitySystemComponent->GetActiveAbilities(&AbilityTags))  
-            {                Cast<UMyGameplayAbility>(Spec.Ability)->SetReleased();  
+            {
+                Cast<UMyGameplayAbility>(Spec.Ability)->SetReleased();  
             }  
             for(auto Cue : Cues)  
-            {                FGameplayCueParameters Parameters;  
+            {
+                FGameplayCueParameters Parameters;  
                 AbilitySystemComponent->RemoveGameplayCueLocal(Cue, Parameters);  
-            }            break;  
+            }
+            break;  
         case EInputTrigger::Tap:  
             AbilitySystemComponent->GetActivatableGameplayAbilitySpecsByAllMatchingTags(AbilityTags, Specs, false);  
             for(auto Spec : Specs)  
-            {                if(Spec->IsActive())  
-                {                    Cast<UMyGameplayAbility>(Spec->Ability)->SetReleased();  
-                }                else  
+            {
+                if(Spec->IsActive())  
+                {
+                    Cast<UMyGameplayAbility>(Spec->Ability)->SetReleased();  
+                }
+                else  
                 {  
                     AbilitySystemComponent->TryActivateAbility(Spec->Handle);  
-                }            }            for(auto Cue : Cues)  
-            {                FGameplayCueParameters Parameters;  
+                }
+            }
+            for(auto Cue : Cues)  
+            {
+                FGameplayCueParameters Parameters;  
                 if(AbilitySystemComponent->IsGameplayCueActive(Cue))  
-                {                    AbilitySystemComponent->RemoveGameplayCueLocal(Cue, Parameters);  
-                }                else  
+                {
+                    AbilitySystemComponent->RemoveGameplayCueLocal(Cue, Parameters);  
+                }
+                else  
                 {  
                     AbilitySystemComponent->AddGameplayCueLocal(Cue, Parameters);  
-                }            }            break;  
+                }
+            }
+            break;  
         case EInputTrigger::Pulse:  
         case EInputTrigger::ChordAction:  
             UE_LOGFMT(LogMyGame, Error, "{THIS}: Input triggers Pulse and Chord not implemented.", GetFName());  
             break;  
-        }    }}  
+        }
+    }
+}  
   
   
 void AMyPlayerController::AcknowledgePossession(APawn* P)  
@@ -666,11 +719,14 @@ void AMyPlayerController::RunCustomInputAction(FGameplayTag CustomBindingTag, EI
   
     // select  
     if(CustomBindingTag == Tag.InputBindingCustomSelect)  
-    {        // custom handling of `Select` action (where the player clicked and selected an object)  
-        // this kind of simple mouse interaction doesn't really have a place in the Gameplay Ability System    }  
+    {
+        // custom handling of `Select` action (where the player clicked and selected an object)  
+        // this kind of simple mouse interaction doesn't really have a place in the Gameplay Ability System
+    }  
     // zoom  
     else if(CustomBindingTag == Tag.InputBindingCustomZoom)  
-    {        // custom handling of zooming in and out using the mouse wheel  
+    {
+        // custom handling of zooming in and out using the mouse wheel  
         auto Delta = InputActionInstance.GetValue().Get<FInputActionValue::Axis1D>();  
         // apply Delta to zoom level  
     }  
