@@ -69,9 +69,11 @@ void AMyPlayerController::HandleJump(const FInputActionInstance& InputActionInst
 
     for (auto GameplayAbilitySpec : AbilitiesToActivate)
     {
-	// fun fact: if you don't explicitly check if your ability is active already, your ability will just activate once more,
-	// which is basically never the intended behavior.
-	// gameplay effects can stack (if you want them to), abilities not so much
+    	// fun fact: if you don't explicitly check if your ability is active already, your ability will just activate once more,
+    	// which is something you probably want to control explicitly.
+        // You can use tags to have an ability either block or cancel further activations (instances) of itself.
+        // I use the code below to make this double activation impossible.
+    	// Btw, stacking of gameplay effects is generally intended. Stacking abilities not so much.
         if(!GameplayAbilitySpec->IsActive()
         {
             TryActivateAbility(GameplayAbilitySpec->Handle);
@@ -148,7 +150,7 @@ You add a property `UMyInputActions* MyInputActions` to the Player Controller to
 AMyPlayerController::SetupInput()
 {
     Cast<UEnhancedInputComponent>(InputComponent)->BindAction
-	( MyInputActions->Map["IA_Jump"]
+	    ( MyInputActions->Map["IA_Jump"]
         , ETriggerEvent::Triggered
         , this
         , &AMyPlayerController::HandleJump
@@ -643,6 +645,8 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
             AbilitySystemComponent->GetActivatableGameplayAbilitySpecsByAllMatchingTags(AbilityTags, Specs, false);  
             for(auto Spec : Specs)  
             {
+                // when you, like me, bind activation to the key pressed event and end the ability upon release,
+                // you can be very restrictive regarding duplicate activations of one ability, e.g. with this assert:
                 check(!Spec->IsActive())  
                 AbilitySystemComponent->TryActivateAbility(Spec->Handle);  
             }  
@@ -668,10 +672,14 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
             AbilitySystemComponent->GetActivatableGameplayAbilitySpecsByAllMatchingTags(AbilityTags, Specs, false);  
             for(auto Spec : Specs)  
             {
+                // different mechanism then the press/release logic above: tapping once do de-activate ...
                 if(Spec->IsActive())  
                 {
                     Cast<UMyGameplayAbility>(Spec->Ability)->SetReleased();  
                 }
+                // ... tapping once to activate.
+                // Note that with this setup, you can control the trigger mechanisms that are actually in effect
+                // by adding/removing any number of triggers to the InputActionSet
                 else  
                 {  
                     AbilitySystemComponent->TryActivateAbility(Spec->Handle);  
