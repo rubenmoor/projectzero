@@ -627,7 +627,6 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
 {  
     auto Tag = FMyGameplayTags::Get();  
     const auto AbilityTags = InputActionTags.Filter(Tag.Ability.GetSingleTagContainer());  
-    auto Cues = InputActionTags.Filter(Tag.GameplayCue.GetSingleTagContainer());  
     const auto CustomInputBindingTags = InputActionTags.Filter(Tag.InputBindingCustom.GetSingleTagContainer());  
   
     for(auto CustomInputBindingTag : CustomInputBindingTags)  
@@ -649,11 +648,6 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
                 // you can be very restrictive regarding duplicate activations of one ability, e.g. with this assert:
                 check(!Spec->IsActive())  
                 AbilitySystemComponent->TryActivateAbility(Spec->Handle);  
-            }  
-            for(const auto Cue : Cues)  
-            {
-                FGameplayCueParameters Parameters;  
-                AbilitySystemComponent->AddGameplayCueLocal(Cue, Parameters);  
             }
             break;  
         case EInputTrigger::Released:  
@@ -675,11 +669,6 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
                 // In a multiplayer setup, calling a function on the ability instance must be a Server RPC
                 // `UMyGameplayAbility` is my ability base clase to provide the interface
                 Cast<UMyGameplayAbility>(AbilityInstance)->ServerRPC_SetReleased();
-            }  
-            for(auto Cue : Cues)  
-            {
-                FGameplayCueParameters Parameters;  
-                AbilitySystemComponent->RemoveGameplayCueLocal(Cue, Parameters);  
             }
             break;  
         case EInputTrigger::Tap:  
@@ -697,18 +686,6 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
                 else  
                 {  
                     AbilitySystemComponent->TryActivateAbility(Spec->Handle);  
-                }
-            }
-            for(auto Cue : Cues)  
-            {
-                FGameplayCueParameters Parameters;  
-                if(AbilitySystemComponent->IsGameplayCueActive(Cue))  
-                {
-                    AbilitySystemComponent->RemoveGameplayCueLocal(Cue, Parameters);  
-                }
-                else  
-                {  
-                    AbilitySystemComponent->AddGameplayCueLocal(Cue, Parameters);  
                 }
             }
             break;  
