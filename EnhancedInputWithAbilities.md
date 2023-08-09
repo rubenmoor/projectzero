@@ -644,9 +644,10 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
             AbilitySystemComponent->GetActivatableGameplayAbilitySpecsByAllMatchingTags(AbilityTags, Specs, false);  
             for(auto Spec : Specs)  
             {
-                // when you, like me, bind activation to the key pressed event and end the ability upon release,
-                // you can be very restrictive regarding duplicate activations of one ability, e.g. with this assert:
-                check(!Spec->IsActive())  
+                // you can avoid re-activation of active abilitites with `if(!Spec->IsActive())`
+                // when you don't use key tapping to toggle abilities, you can even `check(!Spec->IsActive())`
+                // Alternatively, use appropriate values for `CancelAbilitiesWithTag` and `BlockAbilitiesWithTag`
+                // to control the behavior per ability
                 AbilitySystemComponent->TryActivateAbility(Spec->Handle);  
             }
             break;  
