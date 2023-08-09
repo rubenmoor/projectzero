@@ -660,7 +660,21 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
         case EInputTrigger::HoldAndRelease:  
             for(auto Spec : AbilitySystemComponent->GetActiveAbilities(&AbilityTags))  
             {
-                Cast<UMyGameplayAbility>(Spec.Ability)->SetReleased();  
+                // different options here,
+                // you can cancel the ability or call some function on the ability instance like so:
+
+                // InstancingPolicy: InstancedPerActor
+                auto* AbilityInstance = Spec.GetPrimaryInstance();
+
+                if(!AbilityInstance)
+                    // InstancingPolicy: NonInstanced (Get the CDO)
+                    AbilityInstance = Spec.Ability;
+
+                // TODO: InstancedPerExecution doesn't make sense in this setup
+
+                // In a multiplayer setup, calling a function on the ability instance must be a Server RPC
+                // `UMyGameplayAbility` is my ability base clase to provide the interface
+                Cast<UMyGameplayAbility>(AbilityInstance)->ServerRPC_SetReleased();
             }  
             for(auto Cue : Cues)  
             {
@@ -675,7 +689,7 @@ void AMyPlayerController::RunInputAction(const FGameplayTagContainer& InputActio
                 // different mechanism then the press/release logic above: tapping once do de-activate ...
                 if(Spec->IsActive())  
                 {
-                    Cast<UMyGameplayAbility>(Spec->Ability)->SetReleased();  
+                    // like with the `HoldAndRelease` case above, cancel or call some function on the ability instance
                 }
                 // ... tapping once to activate.
                 // Note that with this setup, you can control the trigger mechanisms that are actually in effect
